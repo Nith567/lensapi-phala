@@ -15,6 +15,6 @@ typechain-types
 cache
 artifacts
 
-
+.env
 dist
 polkadot-account.json

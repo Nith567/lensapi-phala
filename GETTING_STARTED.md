@@ -181,7 +181,7 @@ Notice that the test fails and reports that a `Malformed request received` was e
 To simulate the expected result locally, run the Phala Oracle function now with this command:
 ```bash
 yarn run-function -a 0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000043078303100000000000000000000000000000000000000000000000000000000 https://api-mumbai.lens.dev
-```
+```(requestId, profileId)
 >
 > **What are the ingredients for the `yarn run-function` command?**
 >

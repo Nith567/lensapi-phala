@@ -7,7 +7,6 @@ import { Coders } from "@phala/ethers";
 
 type HexString = `0x${string}`
 
-
 // ETH ABI Coders available
 /*
 // Basic Types
@@ -59,15 +58,9 @@ const uintArrayCoder = new Coders.ArrayCoder(uintCoder, 10, "uint256");
 // eth abi coder
 const uintCoder = new Coders.NumberCoder(32, false, "uint256");
 const bytesCoder = new Coders.BytesCoder("bytes");
-const stringCoder = new Coders.StringCoder("string")
-const bytes32Coder = new Coders.BytesCoder("bytes32");
-const bytes32ArrayCoder = new Coders.ArrayCoder(bytes32Coder, 32, "bytes32[]");
-const bytesArrayCoder = new Coders.ArrayCoder(bytesCoder, 32, "bytes");
 
-const stringArrayCoder = new Coders.ArrayCoder(stringCoder, 32, "string[]");
-
-function encodeReply(reply: [number,number,number,number,number,string[],string,number,string,number,string,number,number]): HexString {
-  return Coders.encode([uintCoder,uintCoder,uintCoder,uintCoder,uintCoder,stringArrayCoder,stringCoder, uintCoder,stringCoder,uintCoder,stringCoder,uintCoder,uintCoder], reply) as HexString;
+function encodeReply(reply: [number, number, number]): HexString {
+  return Coders.encode([uintCoder, uintCoder, uintCoder], reply) as HexString;
 }
 
 // Defined in TestLensOracle.sol
@@ -172,7 +165,7 @@ function Bridge(apiUrl: string, reqStr: string):any {
   };
 
   const response = pink.httpRequest({
-    url:apiUrl,
+    url:apiUrl+reqStr,
     method: "GET",
     headers,
     returnTextBody: true
@@ -194,35 +187,6 @@ function Bridge(apiUrl: string, reqStr: string):any {
 }
 
 
-function Bridge2(deposit_cnt:number, net_id: number):any {
-  const bridgeApiEndpoint2 =`https://bridge-api.public.zkevm-test.net/merkle-proof?deposit_cnt=${deposit_cnt}&net_id=${net_id}`
-
-  let headers = {
-    "Content-Type": "application/json",
-    "User-Agent": "phat-contract",
-  };
-
-  const response = pink.httpRequest({
-    url:bridgeApiEndpoint2,
-    method: "GET",
-    headers,
-    returnTextBody: true
-  });
-  if (response.statusCode !== 200) {
-    console.log(
-      `wrong 200: ${response.statusCode}, error: ${
-         response.body
-      }}`
-    );
-    throw Error.FailedToFetchData;
-  }
-  console.info(response);
-  let respBody = response.body;
-  if (typeof respBody !== "string") {
-    throw Error.FailedToDecode;
-  }
-  return JSON.parse(respBody);
-}
 
 function parseProfileId(hexx: string): string {
   var hex = hexx.toString();
@@ -251,7 +215,48 @@ function parseReqStr(hexStr: string): string {
   }
   return str;
 }
+//
+// Here is what you need to implemented for Phat Function, you can customize your logic with
+// JavaScript here.
+//
+// The function will be called with two parameters:
+//
+// - request: The raw payload from the contract call `request` (check the `request` function in TestLensApiConsumerConract.sol).
+//            In this example, it's a tuple of two elements: [requestId, profileId]
+// - settings: The custom settings you set with the `config_core` function of the Action Offchain Rollup Phat Contract. In
+//            this example, it just a simple text of the lens api url prefix.
+//
+// Your returns value MUST be a hex string, and it will send to your contract directly. Check the `_onMessageReceived` function in
+// TestLensApiConsumerContract.sol for more details. We suggest a tuple of three elements: [successOrNotFlag, requestId, data] as
+// the return value.
+//
+// export default function main(request: HexString, settings: string): HexString {
+//   console.log(`handle req: ${request}`);
+//   let requestId, encodedProfileId;
+//   try {
+//     [requestId, encodedProfileId] = Coders.decode([uintCoder, bytesCoder], request);
+//   } catch (error) {
+//     console.info("Malformed request received");
+//     return encodeReply([TYPE_ERROR, 0, errorToCode(error as Error)]);
+//   }
+//   const profileId = parseProfileId(encodedProfileId as string);
+//   console.log(`Request received for profile ${profileId}`);
 
+//   try {
+//     const respData = fetchLensApiStats(settings, profileId);
+//     let stats = respData.data.profile.stats.totalCollects;
+//     console.log("response:", [TYPE_RESPONSE, requestId, stats]);
+//     return encodeReply([TYPE_RESPONSE, requestId, stats]);
+//   } catch (error) {
+//     if (error === Error.FailedToFetchData) {
+//       throw error;
+//     } else {
+//       // otherwise tell client we cannot process it
+//       console.log("error:", [TsPE_ERROR, requestId, error]);
+//       return encodeReply([TYPE_ERROR, requestId, errorToCode(error as Error)]);
+//     }
+//   }
+// }
 
 export default function main(request: HexString, secrets: string): HexString {
   console.log(`handle req: ${request}`);
@@ -261,47 +266,25 @@ export default function main(request: HexString, secrets: string): HexString {
     [requestId, encodedReqStr] = Coders.decode([uintCoder, bytesCoder], request);
   } catch (error) {
     console.info("Malformed request received");
-    return encodeReply([TYPE_ERROR, 0, errorToCode(error as Error),0,0,[],'23',2,'sd',3,'s',23,34]);
+    return encodeReply([TYPE_ERROR, 0, errorToCode(error as Error)]);
   }
 
   const parsedHexReqStr = parseReqStr(encodedReqStr as string);
   console.log(`Request received for profile ${parsedHexReqStr}`);
 
   try {
-    console.info('try here ')
-    console.log('try here ')
     const respData = Bridge(secrets, parsedHexReqStr);
     // Adjust the stats extraction based on the actual response structure
-    let stats1: number = respData.deposits[0].deposit_cnt;
-    let stats2: number = respData.deposits[0].network_id;
-    
-    let stats10: number = respData.deposits[0].orig_net;
-    let stats9: string = respData.deposits[0].orig_addr;
-    let stats8: number = respData.deposits[0].dest_net;
-    let stats7: string = respData.deposits[0].dest_addr;
-    let stats6: number = respData.deposits[0].amount;
-    let stats5: string = respData.deposits[0].metadata;
-    
-const respData2=Bridge2(stats1,stats2)   
-
-let stat3:number=respData2.proof.main_exit_root
-let stat11:number=respData2.proof.rollup_exit_root
-
-let stats4:string=respData2.proof.merkle_proof
-
-let merkleProofArray: string[] = respData2.proof.merkle_proof.split(",");
-// console.log("response for stats bitch is:", [TYPE_RESPONSE, requestId, stats1,stats2,stat3,stats4,stats5,stats6,stats7,stats8,stats9,stats10,stat11]);
-    return encodeReply([TYPE_RESPONSE, requestId,stats1,stats2,stat3,merkleProofArray,stats5,stats6,stats7,stats8,stats9,stats10,stat11]);
-  }
- catch (error) {
-    console.info("error as ")
+    let stats =respData.deposits[0].orig_addr;
+    console.log("response for stats bitch is:", [TYPE_RESPONSE, requestId, stats]);
+    return encodeReply([TYPE_RESPONSE, requestId, stats]);
+  } catch (error) {
     if (error === Error.FailedToFetchData) {
       throw error;
     } else {
-      // ,number,number,string,string,number,string,number,string,number,number
       // Otherwise, tell the client we cannot process it
-      console.log("errors", [TYPE_ERROR, requestId, error]);
-      return encodeReply([TYPE_ERROR, requestId, errorToCode(error as Error),1,1,['sd','sdf','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w'],'23',2,'sd',3,'s',23,34]);
+      console.log("error:", [TYPE_ERROR, requestId, error]);
+      return encodeReply([TYPE_ERROR, requestId, errorToCode(error as Error)]);
     }
   }
 }
