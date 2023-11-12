@@ -261,7 +261,7 @@ export default function main(request: HexString, secrets: string): HexString {
     [requestId, encodedReqStr] = Coders.decode([uintCoder, bytesCoder], request);
   } catch (error) {
     console.info("Malformed request received");
-    return encodeReply([TYPE_ERROR, 0, errorToCode(error as Error),0,0,[],'23',2,'sd',3,'s',23,34]);
+    return encodeReply([TYPE_ERROR, 0, errorToCode(error as Error),0,0,['sd','sdf','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w','w'],'23',2,'sd',3,'s',23,34]);
   }
 
   const parsedHexReqStr = parseReqStr(encodedReqStr as string);
@@ -269,9 +269,7 @@ export default function main(request: HexString, secrets: string): HexString {
 
   try {
     console.info('try here ')
-    console.log('try here ')
     const respData = Bridge(secrets, parsedHexReqStr);
-    // Adjust the stats extraction based on the actual response structure
     let stats1: number = respData.deposits[0].deposit_cnt;
     let stats2: number = respData.deposits[0].network_id;
     
@@ -290,7 +288,7 @@ let stat11:number=respData2.proof.rollup_exit_root
 let stats4:string=respData2.proof.merkle_proof
 
 let merkleProofArray: string[] = respData2.proof.merkle_proof.split(",");
-// console.log("response for stats bitch is:", [TYPE_RESPONSE, requestId, stats1,stats2,stat3,stats4,stats5,stats6,stats7,stats8,stats9,stats10,stat11]);
+// console.log("response for stats  is:", [TYPE_RESPONSE, requestId, stats1,stats2,stat3,stats4,stats5,stats6,stats7,stats8,stats9,stats10,stat11]);
     return encodeReply([TYPE_RESPONSE, requestId,stats1,stats2,stat3,merkleProofArray,stats5,stats6,stats7,stats8,stats9,stats10,stat11]);
   }
  catch (error) {
