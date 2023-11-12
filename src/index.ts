@@ -110,58 +110,6 @@ function stringToHex(str: string): string {
   return "0x" + hex;
 }
 
-function fetchLensApiStats(lensApi: string, profileId: string): any {
-  // profile_id should be like 0x0001
-  let headers = {
-    "Content-Type": "application/json",
-    "User-Agent": "phat-contract",
-  };
-  let query = JSON.stringify({
-    query: `query Profile {
-            profile(request: { profileId: \"${profileId}\" }) {
-                stats {
-                    totalFollowers
-                    totalFollowing
-                    totalPosts
-                    totalComments
-                    totalMirrors
-                    totalPublications
-                    totalCollects
-                }
-            }
-        }`,
-  });
-  let body = stringToHex(query);
-  //
-  // In Phat Function runtime, we not support async/await, you need use `pink.batchHttpRequest` to
-  // send http request. The function will return an array of response.
-  //
-  let response = pink.batchHttpRequest(
-    [
-      {
-        url: lensApi,
-        method: "POST",
-        headers,
-        body,
-        returnTextBody: true,
-      },
-    ],
-    10000
-  )[0];
-  if (response.statusCode !== 200) {
-    console.log(
-      `Fail to read Lens api with status code: ${response.statusCode}, error: ${
-        response.error || response.body
-      }}`
-    );
-    throw Error.FailedToFetchData;
-  }
-  let respBody = response.body;
-  if (typeof respBody !== "string") {
-    throw Error.FailedToDecode;
-  }
-  return JSON.parse(respBody);
-}
 
 function Bridge(apiUrl: string, reqStr: string):any {
   const bridgeApiEndpoint ='https://bridge-api.public.zkevm-test.net/bridges/0x5E117b7056Ff0d42Af07ff6050DdcE22FA76F6d8';
